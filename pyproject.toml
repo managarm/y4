@@ -1,6 +1,6 @@
 [project]
 name = "y4"
-version = "0.1"
+version = "0.1.1"
 dependencies = ["pyyaml"]
 
 [build-system]
