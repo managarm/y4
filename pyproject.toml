@@ -1,7 +1,10 @@
 [project]
 name = "y4"
 version = "0.1.1"
-dependencies = ["pyyaml"]
+dependencies = [
+    "jq",
+    "pyyaml",
+]
 
 [build-system]
 requires = ["hatchling"]
