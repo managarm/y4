@@ -96,3 +96,10 @@ def splice_if(ctx, node):
             value.append(d["item"])
 
     return yaml.SequenceNode("tag:y4.managarm.org:splice", value)
+
+
+@builtin(tag="std::join")
+def join(ctx, node):
+    parts = [ctx.evaluate(item) for item in node.value]
+
+    return util.represent("".join(parts))
