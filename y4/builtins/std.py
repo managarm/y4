@@ -53,6 +53,16 @@ def opt(ctx, node):
     return util.represent(ctx.env.get_option(k))
 
 
+@builtin(tag="std::ite")
+def ite(ctx, node):
+    d = ctx.assemble_dict_keys(node)
+    cond = ctx.evaluate(d["if"])
+    if cond:
+        return ctx.normalize(d["then"])
+    else:
+        return ctx.normalize(d["else"])
+
+
 @builtin(tag="std::get")
 def get(ctx, node):
     if isinstance(node, yaml.SequenceNode):
