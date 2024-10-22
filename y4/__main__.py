@@ -37,14 +37,14 @@ def main():
     args = parser.parse_args()
 
     env = context.Environment()
+    for k, v in args.opt:
+        env.set_option(k, v)
     for path in args.path:
         env.add_search_path(path)
 
     ctx = context.Context(env=env)
     if args.trace:
         ctx.enable_tracing = True
-    for k, v in args.opt:
-        ctx.set_option(k, v)
 
     with open(args.input) as f:
         roots = yaml.compose_all(f, Loader=util.YamlLoader)

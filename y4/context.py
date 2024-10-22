@@ -33,6 +33,13 @@ class Environment:
     def __init__(self):
         self._mods = {}
         self._search_paths = []
+        self._opts = {}
+
+    def set_option(self, k, v):
+        self._opts[k] = v
+
+    def get_option(self, k):
+        return self._opts.get(k)
 
     def add_search_path(self, path):
         self._search_paths.append(path)
@@ -87,20 +94,12 @@ class Context:
             self.env = env
             self.enable_tracing = False
             self._bindings = {}
-            self._opts = {}
         else:
             assert env is None
 
             self.env = parent.env
             self.enable_tracing = parent.enable_tracing
             self._bindings = copy(parent._bindings)
-            self._opts = copy(parent._opts)
-
-    def set_option(self, k, v):
-        self._opts[k] = v
-
-    def get_option(self, k):
-        return self._opts.get(k)
 
     # Binds a tag to a Rule or Namespace.
     def bind(self, tag, binding):

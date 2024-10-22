@@ -50,7 +50,7 @@ def fn(ctx, node):
 @builtin(tag="std::opt")
 def opt(ctx, node):
     k = ctx.evaluate(node, tag="tag:yaml.org,2002:str")
-    return util.represent(ctx.get_option(k))
+    return util.represent(ctx.env.get_option(k))
 
 
 @builtin(tag="std::contains")
