@@ -79,9 +79,10 @@ def contains(ctx, node):
 @builtin(tag="std::splice_if")
 def splice_if(ctx, node):
     value = []
-    for item in node.value:
+    for raw_item in node.value:
+        item = ctx.normalize(raw_item)
         d = ctx.assemble_dict_keys(item)
-        if d["if"]:
+        if ctx.evaluate(d["if"]):
             value.append(d["item"])
 
     return yaml.SequenceNode("tag:y4.managarm.org:splice", value)
