@@ -53,6 +53,23 @@ def opt(ctx, node):
     return util.represent(ctx.env.get_option(k))
 
 
+@builtin(tag="std::get")
+def get(ctx, node):
+    if isinstance(node, yaml.SequenceNode):
+        raw_obj = node.value[0]
+        raw_key = node.value[1]
+    elif isinstance(node, yaml.MappingNode):
+        d = ctx.assemble_dict_keys(node)
+        raw_obj = d["object"]
+        raw_key = d["key"]
+    else:
+        raise util.Y4Error("Invalid node kind for !std::get")
+    obj = ctx.normalize(raw_obj)
+    key = ctx.evaluate(raw_key)
+    obj_dict = ctx.assemble_dict_keys(obj)
+    return obj_dict[key]
+
+
 @builtin(tag="std::contains")
 def contains(ctx, node):
     obj = ctx.evaluate(node, tag="tag:yaml.org,2002:map")
