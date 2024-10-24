@@ -1,5 +1,9 @@
 import yaml
 
+YAML_SEQ_TAG = "tag:yaml.org,2002:seq"
+YAML_MAP_TAG = "tag:yaml.org,2002:map"
+YAML_STR_TAG = "tag:yaml.org,2002:str"
+
 YamlLoader = yaml.SafeLoader
 
 
@@ -11,6 +15,13 @@ class InternalNode(yaml.Node):
 
 class Y4Error(Exception):
     pass
+
+
+def validate_node(node, desc, *, kind=None, tag=None):
+    if kind is not None and not isinstance(node, kind):
+        raise Y4Error(f"Invalid node kind {type(node)} for {desc}, expected {kind}")
+    if tag is not None and node.tag != tag:
+        raise Y4Error(f"Invalid node tag {node.tag} for {desc}, expected {tag}")
 
 
 def get_local(tag):

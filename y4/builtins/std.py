@@ -6,17 +6,27 @@ from ..registry import builtin
 
 
 class Y4Function:
-    def __init__(self, inner_ctx, expr):
+    def __init__(self, inner_ctx, args, expr):
         self._inner_ctx = inner_ctx
+        self._args = args
         self._expr = expr
 
-    def apply(self, node):
+    def apply(self, *nodes):
         # Note that the arguments are not normalized before application.
         # They will usually be normalized by the caller.
 
         # We compute the function using the inner context with !arg introduced.
+
         apply_ctx = context.Context(self._inner_ctx)
-        apply_ctx.bind("arg", context.ConstRule(node))
+
+        if len(self._args) != len(nodes):
+            raise util.Y4Error(
+                f"y4 function that takes {len(self._args)} argument(s)"
+                f" was called with {len(nodes)} argument(s)"
+            )
+        for tag, node in zip(self._args, nodes):
+            apply_ctx.bind(tag, context.ConstRule(node))
+
         return apply_ctx.normalize(self._expr)
 
 
@@ -39,9 +49,22 @@ def fn(ctx, node):
     inner_ctx = context.Context(ctx)
 
     d = ctx.assemble_dict_keys(node)
+
+    if "arg" in d and "args" in d:
+        raise util.Y4Error("std::fn cannot specify both arg: and args:")
+    elif "arg" in d:
+        args = [util.get_local(util.get_marker_tag(d["arg"]))]
+    elif "args" in d:
+        util.validate_node(
+            d["args"], "std::fn", kind=yaml.SequenceNode, tag=util.YAML_SEQ_TAG
+        )
+        args = [util.get_local(util.get_marker_tag(arg)) for arg in d["args"].value]
+    else:
+        raise util.Y4Error("std::fn has neither arg: nor args:")
+
     expr = d["return"]
     return util.InternalNode(
-        "tag:y4.managarm.org:function", Y4Function(inner_ctx, expr)
+        "tag:y4.managarm.org:function", Y4Function(inner_ctx, args, expr)
     )
 
 
@@ -88,8 +111,30 @@ def contains(ctx, node):
 def apply(ctx, node):
     tf = ctx.normalize(node, tag="tag:yaml.org,2002:map")
     d = ctx.assemble_dict_keys(tf)
+
+    # Extract fn:
+    util.validate_node(
+        d["fn"],
+        "std::apply, fn: parameter",
+        kind=util.InternalNode,
+        tag="tag:y4.managarm.org:function",
+    )
     func = d["fn"].value
-    return func.apply(d["arg"])
+
+    # Extract either arg: or args:
+    if "arg" in d and "args" in d:
+        raise util.Y4Error("std::apply cannot specify both arg: and args:")
+    elif "arg" in d:
+        args = [d["arg"]]
+    elif "args" in d:
+        util.validate_node(
+            d["args"], "std::apply", kind=yaml.SequenceNode, tag=util.YAML_SEQ_TAG
+        )
+        args = d["args"].value
+    else:
+        raise util.Y4Error("std::apply has neither arg: nor args:")
+
+    return func.apply(*args)
 
 
 @builtin(tag="std::splice_if")
