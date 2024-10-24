@@ -207,7 +207,19 @@ class CustomRule(Rule):
         self.func = func
 
     def normalize(self, ctx, node):
-        return self.func.apply(ctx, node)
+        # Custom rules normalize the node as if it had the default tag,
+        # i.e., the tag that the non-specific tag ! would resolve to.
+        if isinstance(node, yaml.SequenceNode):
+            base_tag = "tag:yaml.org,2002:seq"
+        elif isinstance(node, yaml.MappingNode):
+            base_tag = "tag:yaml.org,2002:map"
+        elif isinstance(node, yaml.ScalarNode):
+            # Scalars are normalized as strings.
+            base_tag = "tag:yaml.org,2002:str"
+        else:
+            raise util.Y4Error(f"Cannot apply custom rule to node kind {type(node)}")
+        tf = ctx.normalize(node, tag=base_tag)
+        return self.func.apply(tf)
 
 
 def process_bindings(ctx, d):

@@ -6,18 +6,17 @@ from ..registry import builtin
 
 
 class Y4Function:
-    def __init__(self, inner_ctx, expr, arg_tag):
+    def __init__(self, inner_ctx, expr):
         self._inner_ctx = inner_ctx
         self._expr = expr
-        self._arg_tag = arg_tag
 
-    def apply(self, ctx, node):
-        # First, we normalize the argument using the current context.
-        tf = ctx.normalize(node, tag=self._arg_tag)
+    def apply(self, node):
+        # Note that the arguments are not normalized before application.
+        # They will usually be normalized by the caller.
 
-        # Now, we compute the function using the inner context with !arg introduced.
+        # We compute the function using the inner context with !arg introduced.
         apply_ctx = context.Context(self._inner_ctx)
-        apply_ctx.bind("arg", context.ConstRule(tf))
+        apply_ctx.bind("arg", context.ConstRule(node))
         return apply_ctx.normalize(self._expr)
 
 
@@ -41,9 +40,8 @@ def fn(ctx, node):
 
     d = ctx.assemble_dict_keys(node)
     expr = d["return"]
-    arg_tag = util.get_marker_tag(d["extends"])
     return util.InternalNode(
-        "tag:y4.managarm.org:function", Y4Function(inner_ctx, expr, arg_tag)
+        "tag:y4.managarm.org:function", Y4Function(inner_ctx, expr)
     )
 
 
