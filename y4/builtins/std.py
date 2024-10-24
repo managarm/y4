@@ -84,6 +84,14 @@ def contains(ctx, node):
     return util.represent(obj["item"] in obj["list"])
 
 
+@builtin(tag="std::apply")
+def apply(ctx, node):
+    tf = ctx.normalize(node, tag="tag:yaml.org,2002:map")
+    d = ctx.assemble_dict_keys(tf)
+    func = d["fn"].value
+    return func.apply(d["arg"])
+
+
 @builtin(tag="std::splice_if")
 def splice_if(ctx, node):
     value = []
