@@ -171,6 +171,13 @@ class Context:
             if not isinstance(node, yaml.ScalarNode):
                 raise util.Y4Error(f"Invalid node kind for {tag}")
             return yaml.ScalarNode(tag, node.value)
+        elif tag in [
+            "tag:y4.managarm.org:function",
+            "tag:y4.managarm.org:context",
+        ]:
+            if not isinstance(node, util.InternalNode):
+                raise util.Y4Error(f"Invalid node kind for {tag}")
+            return util.InternalNode(tag, node.value)
         else:
             raise util.Y4Error(f"Unexpected YAML tag {node.tag}")
 
@@ -203,8 +210,9 @@ class ConstRule(Rule):
 
 
 class CustomRule(Rule):
-    def __init__(self, func):
-        self.func = func
+    def __init__(self, fn, *, normalize):
+        self._fn = fn
+        self._normalize = normalize
 
     def normalize(self, ctx, node):
         # Custom rules normalize the node as if it had the default tag,
@@ -218,8 +226,14 @@ class CustomRule(Rule):
             base_tag = "tag:yaml.org,2002:str"
         else:
             raise util.Y4Error(f"Cannot apply custom rule to node kind {type(node)}")
-        tf = ctx.normalize(node, tag=base_tag)
-        return self.func.apply(tf)
+
+        if self._normalize:
+            tf = ctx.normalize(node, tag=base_tag)
+            return self._fn.apply(tf)
+        else:
+            ctx_node = util.InternalNode("tag:y4.managarm.org:context", ctx)
+            tf = util.copy_node(node, tag=base_tag)
+            return self._fn.apply(ctx_node, tf)
 
 
 def process_bindings(ctx, d):
@@ -240,8 +254,17 @@ def process_bindings(ctx, d):
         for k, v in d["rule"].value:
             tag = util.get_local(k.tag)
             tf = ctx.normalize(v)
-            if tf.tag != "tag:y4.managarm.org:function":
+            if tf.tag == "tag:y4.managarm.org:function":
+                util.validate_node(tf, "custom rule", kind=util.InternalNode)
+                fn = tf.value
+                normalize = True
+            elif tf.tag == util.YAML_MAP_TAG:
+                util.validate_node(tf, "custom rule", kind=yaml.MappingNode)
+                tf_d = ctx.assemble_dict_keys(tf)
+                fn = tf_d["fn"].value
+                normalize = True
+                if "normalize" in tf_d:
+                    normalize = ctx.evaluate(tf_d["normalize"])
+            else:
                 raise util.Y4Error(f"Cannot define custom rule using {tf.tag}")
-            if not isinstance(tf, util.InternalNode):
-                raise util.Y4Error(f"Invalid node kind for {tf.tag}")
-            yield (tag, CustomRule(tf.value))
+            yield (tag, CustomRule(fn, normalize=normalize))

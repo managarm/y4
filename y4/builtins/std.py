@@ -68,6 +68,20 @@ def fn(ctx, node):
     )
 
 
+@builtin(tag="std::normalize")
+def normalize(ctx, node):
+    tf = ctx.normalize(node, tag="tag:yaml.org,2002:map")
+    d = ctx.assemble_dict_keys(tf)
+    util.validate_node(
+        d["ctx"],
+        "ctx: parameter of std::normalize",
+        kind=util.InternalNode,
+        tag="tag:y4.managarm.org:context",
+    )
+    inner_ctx = d["ctx"].value
+    return inner_ctx.normalize(d["node"])
+
+
 @builtin(tag="std::opt")
 def opt(ctx, node):
     k = ctx.evaluate(node, tag="tag:yaml.org,2002:str")
@@ -115,7 +129,7 @@ def apply(ctx, node):
     # Extract fn:
     util.validate_node(
         d["fn"],
-        "std::apply, fn: parameter",
+        "fn: parameter for std::apply",
         kind=util.InternalNode,
         tag="tag:y4.managarm.org:function",
     )

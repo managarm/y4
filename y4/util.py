@@ -8,6 +8,8 @@ YamlLoader = yaml.SafeLoader
 
 
 class InternalNode(yaml.Node):
+    id = "internal"
+
     def __init__(self, tag, value):
         self.tag = tag
         self.value = value
@@ -19,7 +21,9 @@ class Y4Error(Exception):
 
 def validate_node(node, desc, *, kind=None, tag=None):
     if kind is not None and not isinstance(node, kind):
-        raise Y4Error(f"Invalid node kind {type(node)} for {desc}, expected {kind}")
+        raise Y4Error(
+            f"Invalid node kind {type(node).id} for {desc}, expected {kind.id}"
+        )
     if tag is not None and node.tag != tag:
         raise Y4Error(f"Invalid node tag {node.tag} for {desc}, expected {tag}")
 
@@ -38,7 +42,10 @@ def get_marker_tag(node):
     return node.tag
 
 
-def copy_node(node, tag):
+def copy_node(node, *, tag=None):
+    if tag is None:
+        tag = node.tag
+
     if isinstance(node, yaml.SequenceNode):
         return yaml.SequenceNode(tag, node.value)
     elif isinstance(node, yaml.MappingNode):
