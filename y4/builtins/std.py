@@ -165,6 +165,51 @@ def splice_if(ctx, node):
     return yaml.SequenceNode("tag:y4.managarm.org:splice", value)
 
 
+# List manipulation.
+
+
+@builtin(tag="std::map")
+def map(ctx, node):
+    tf = ctx.normalize(node, tag=util.YAML_MAP_TAG)
+    d = ctx.assemble_dict_keys(tf)
+    util.validate_node(
+        d["list"],
+        "list: parameter of std::map",
+        kind=yaml.SequenceNode,
+        tag=util.YAML_SEQ_TAG,
+    )
+    util.validate_node(
+        d["fn"],
+        "fn: parameter of std::map",
+        kind=util.InternalNode,
+        tag="tag:y4.managarm.org:function",
+    )
+    fn = d["fn"].value
+    return yaml.SequenceNode(
+        util.YAML_SEQ_TAG, [fn.apply(item) for item in d["list"].value]
+    )
+
+
+@builtin(tag="std::reduce")
+def reduce(ctx, node):
+    tf = ctx.normalize(node, tag=util.YAML_MAP_TAG)
+    d = ctx.assemble_dict_keys(tf)
+    util.validate_node(
+        d["list"],
+        "list: parameter of std::reduce",
+        kind=yaml.SequenceNode,
+        tag=util.YAML_SEQ_TAG,
+    )
+    util.validate_node(
+        d["fn"],
+        "fn: parameter of std::reduce",
+        kind=util.InternalNode,
+        tag="tag:y4.managarm.org:function",
+    )
+    fn = d["fn"].value
+    return functools.reduce(fn.apply, d["list"].value, d["init"])
+
+
 # String manipulation.
 
 
