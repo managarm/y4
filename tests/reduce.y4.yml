@@ -1,0 +1,14 @@
+!<tag:y4.managarm.org:preamble>
+import:
+- !std
+---
+result:
+  !std::reduce
+  list: [1, 2, 3]
+  init: 100
+  fn:
+    !std::fn
+    args: [!x , !y ]
+    return: !std::add [!x , !y ]
+expected:
+  106

@@ -1,0 +1,13 @@
+!<tag:y4.managarm.org:preamble>
+import:
+- !std
+---
+result:
+  !std::map
+  list: [1, 2, 3, 4]
+  fn:
+    !std::fn
+    args: [!x ]
+    return: !std::add [!x , 100]
+expected:
+  [101, 102, 103, 104]
