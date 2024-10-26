@@ -1,3 +1,5 @@
+import functools
+import operator
 import yaml
 
 from .. import context
@@ -163,8 +165,72 @@ def splice_if(ctx, node):
     return yaml.SequenceNode("tag:y4.managarm.org:splice", value)
 
 
+# String manipulation.
+
+
 @builtin(tag="std::join")
 def join(ctx, node):
     parts = [ctx.evaluate(item) for item in node.value]
 
     return util.represent("".join(parts))
+
+
+# Arithmetic.
+
+
+def extract_operands(ctx, node, desc):
+    if isinstance(node, yaml.SequenceNode):
+        tf = ctx.normalize(node, tag=util.YAML_SEQ_TAG)
+        return tf.value
+    elif isinstance(node, yaml.MappingNode):
+        tf = ctx.normalize(node, tag=util.YAML_MAP_TAG)
+        d = ctx.assemble_dict_keys(tf)
+        util.validate_node(
+            d["ops"], desc, kind=yaml.SequenceNode, tag=util.YAML_SEQ_TAG
+        )
+        return d["ops"].value
+    else:
+        raise util.Y4Error(f"Invalid node kind for {desc}")
+
+
+@builtin(tag="std::add")
+def add(ctx, node):
+    ops = extract_operands(ctx, node, "std::add")
+    return util.represent(sum(util.construct(op) for op in ops))
+
+
+@builtin(tag="std::mul")
+def mul(ctx, node):
+    ops = extract_operands(ctx, node, "std::mul")
+    it = (util.construct(op) for op in ops)
+    return util.represent(functools.reduce(operator.mul, it, 1))
+
+
+@builtin(tag="std::sub")
+def sub(ctx, node):
+    ops = extract_operands(ctx, node, "std::sub")
+    if len(ops) != 2:
+        raise util.Y4Error("Expected exactly two operands for std::sub")
+    lhs = util.construct(ops[0])
+    rhs = util.construct(ops[1])
+    return util.represent(lhs - rhs)
+
+
+@builtin(tag="std::div")
+def div(ctx, node):
+    ops = extract_operands(ctx, node, "std::div")
+    if len(ops) != 2:
+        raise util.Y4Error("Expected exactly two operands for std::div")
+    lhs = util.construct(ops[0])
+    rhs = util.construct(ops[1])
+    return util.represent(lhs // rhs)
+
+
+@builtin(tag="std::mod")
+def mod(ctx, node):
+    ops = extract_operands(ctx, node, "std::mod")
+    if len(ops) != 2:
+        raise util.Y4Error("Expected exactly two operands for std::mod")
+    lhs = util.construct(ops[0])
+    rhs = util.construct(ops[1])
+    return util.represent(lhs % rhs)
