@@ -22,3 +22,25 @@ jobs:
           - name: Run y4 pytests
             run: |
                 pytest tests/
+
+    build:
+        name: Build source package
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4
+          - name: Setup Python
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.x'
+          - name: Install hatch
+            run: |
+                pip install hatch
+          - name: Building using hatch
+            run: |
+                hatch build
+          - name: Upload artifact
+            uses: actions/upload-artifact@v4
+            with:
+                name: packages
+                path: dist/y4-*.tar.gz
