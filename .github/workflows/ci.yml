@@ -1,0 +1,24 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+    test:
+        name: Test y4
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4
+          - name: Setup Python
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.x'
+          - name: Install Python prerequisites
+            run: |
+                pip install pytest
+          - name: Install y4 from checkout
+            run: |
+                pip install .
+          - name: Run y4 pytests
+            run: |
+                pytest tests/
