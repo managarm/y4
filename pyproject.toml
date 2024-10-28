@@ -5,6 +5,7 @@ dependencies = [
     "jq",
     "pyyaml",
 ]
+readme = "README.md"
 
 [build-system]
 requires = ["hatchling"]
