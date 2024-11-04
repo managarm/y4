@@ -55,7 +55,14 @@ def main():
                     ctx.bind(tag, binding)
             else:
                 out = ctx.evaluate(root)
-                sys.stdout.write(yaml.dump(out, sort_keys=False, explicit_start=True))
+                sys.stdout.write(
+                    yaml.dump(
+                        out,
+                        sort_keys=False,
+                        explicit_start=True,
+                        Dumper=util.YamlDumper,
+                    )
+                )
 
 
 if __name__ == "__main__":

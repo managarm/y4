@@ -4,7 +4,15 @@ YAML_SEQ_TAG = "tag:yaml.org,2002:seq"
 YAML_MAP_TAG = "tag:yaml.org,2002:map"
 YAML_STR_TAG = "tag:yaml.org,2002:str"
 
-YamlLoader = yaml.SafeLoader
+try:
+    YamlLoader = yaml.CSafeLoader
+except AttributeError:
+    YamlLoader = yaml.SafeLoader
+
+try:
+    YamlDumper = yaml.CSafeDumper
+except AttributeError:
+    YamlDumper = yaml.SafeDumper
 
 
 class InternalNode(yaml.Node):
